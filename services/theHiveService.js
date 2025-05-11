@@ -1,4 +1,10 @@
+//theHiveService.js
+
 const theHiveClient = require('../config/theHiveConfig');
+
+const { promisify } = require('util');
+const dns = require('dns');
+const lookup = promisify(dns.lookup);
 
 const createCase = async (caseData) => {
   const payload = {
@@ -18,20 +24,37 @@ const createCase = async (caseData) => {
   const response = await theHiveClient.post('/case', payload);
   return {
     ...response.data,
-    id: response.data.caseId // Return numeric ID for reference
+    id: response.data.caseId, // Return numeric ID for reference
+    apiId: response.data.id
   };
 };
 
-const getAllCases = async () => {
-  const response = await theHiveClient.get('/case');
-  return response.data.map(c => ({
-    displayId: c.caseId,
-    apiId: c.id, // Elasticsearch ID for operations
-    title: c.title,
-    owner: c.owner,
-    status: c.status,
-    description: c.description
-  }));
+const getAllCases = async (rangeStart = 0, rangeEnd = 100) => {
+  try {
+    const response = await theHiveClient.get('/case', {
+      headers: {
+        'Range': `case=${rangeStart}-${rangeEnd}`,       
+        'Content-Type': undefined    
+      }
+    });
+
+    return response.data.map(c => ({
+      caseId: c.id,
+      id: c.caseId,
+      title: c.title,
+      owner: c.owner,
+      status: c.status,
+      severity: c.severity,
+      createdAt: new Date(c.createdAt)
+    }));
+
+  } catch (error) {
+    console.error('Deep Error Analysis:', {
+      fullError: error.toJSON ? error.toJSON() : error,
+      timestamp: Date.now()
+    });
+    throw error;
+  }
 };
 
 const updateCase = async (caseId, updatedData) => {

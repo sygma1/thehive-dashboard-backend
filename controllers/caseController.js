@@ -1,3 +1,5 @@
+//caseController.js
+
 const { 
     createCase, 
     getAllCases, 
@@ -17,6 +19,7 @@ const createNewCase = async (req, res) => {
         const newCase = await createCase(req.body);
         res.status(201).json({
           id: newCase.caseId, // Use numeric ID
+          apiId: newCase._id,
           title: newCase.title,
           owner: newCase.owner,
           status: newCase.status
@@ -34,26 +37,45 @@ const createNewCase = async (req, res) => {
 };
   
 const getCases = async (req, res) => {
-    try {
-        const cases = await getAllCases();
-        const formattedCases = cases.map(c => ({
-          displayId: c.caseId,    // Numeric ID for display
-          apiId: c.id,            // Elasticsearch ID for operations
-          title: c.title,
-          owner: c.owner,
-          status: c.status
-        }));
-        res.status(200).json(formattedCases);
-    } catch (error) {
-      console.error('TheHive API Error (getCases):', {
-        status: error.response?.status,
-        data: error.response?.data,
-        request: error.config?.data
-      });
-      res.status(error.response?.status || 500).json({
-        error: error.response?.data?.message || 'Failed to retrieve cases'
+  try {
+    const { rangeStart = 0, rangeEnd = 100 } = req.query;
+    const cases = await getAllCases(rangeStart, rangeEnd);
+
+    if (!Array.isArray(cases)) {
+      console.warn('getAllCases did not return an array:', cases);
+      return res.status(500).json({
+        error: 'Unexpected response format from TheHive',
+        system: 'Expected array, received non-array'
       });
     }
+
+    const formattedCases = cases.map(c => ({
+      displayId: c.caseId,
+      apiId: c.id,
+      title: c.title,
+      owner: c.owner,
+      status: c.status,
+      severity: c.severity,
+      createdAt: c.createdAt
+    }));
+
+    res.status(200).json(formattedCases);
+
+  } catch (error) {
+    console.error('Complete Error Context:', {
+      message: error.message,
+      stack: error.stack,
+      env: {
+        THE_HIVE_URL: process.env.THE_HIVE_URL,
+        NODE_ENV: process.env.NODE_ENV
+      }
+    });
+
+    res.status(500).json({
+      error: 'Case retrieval failed',
+      system: 'Check TheHive connection and logs'
+    });
+  }
 };
   
 const modifyCase = async (req, res) => {
