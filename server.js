@@ -3,7 +3,10 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const caseRoutes = require('./routes/caseRoutes');
+const caseRoutes = require('./routes/caseRoutes.js');
+const userRoutes = require('./routes/userRoutes.js');
+const observablesByCaseRoutes = require('./routes/observablesByCaseRoutes.js');
+const observableByIdRoutes = require('./routes/observableByIdRoutes.js');
 const helmet = require('helmet');
 
 dotenv.config();
@@ -29,6 +32,9 @@ app.use(express.json({
 
 // Routes
 app.use('/api/cases', caseRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/cases/:caseId/observables', observablesByCaseRoutes);
+app.use('/api/observables', observableByIdRoutes); // Observables routes by ID
 
 // Error handling
 app.use((err, req, res, next) => {

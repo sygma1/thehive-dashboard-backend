@@ -1,4 +1,4 @@
-//caseController.js
+//controllers/caseController.js
 
 const { 
     createCase, 
