@@ -21,12 +21,18 @@ const getUsers = async (req, res) => {
 const createUser = async (req, res) => {
   const { login, name, roles, password } = req.body;
 
+
   if (!login || !name || !roles || !Array.isArray(roles)) {
     return res.status(400).json({ error: 'Missing required fields: login, name, roles (array)' });
   }
 
   try {
-    const newUser = await createNewUser(req.body);
+    const newUser = await createNewUser({
+      login,
+      name,
+      password,
+      roles: ['read'],
+    });
     res.status(201).json(newUser);
   } catch (err) {
     res.status(400).json({ error: err.message });
